@@ -1,2 +1,2 @@
-I love ROVs, so I'm trying to make some myself. This repository exists so I can record my work and learn to use Git in the process.
-I made this repository for myself, but if you've stumbled across it, I hope its contents can be of some value to you.
+I love ROVs, so I'm making one of my own. My ROV's going to dive to the bottom of Smith Lake in Denver, CO's Washington Park. I created this repository to  record my work and familiarize myself with Git in the process.
+If you share an interest in making ROVs, I hope this repository's contents can be of some value to you.
