@@ -47,8 +47,10 @@ void loop() {
 
   // map the y-axis potentiometer ranging from 0-1023 to a valid pulse width range from 128-255
   int pwmVal = map(yValue, 0, 1023, 128, 255);
-  // write pulse width to signal pin
-  analogWrite(signalPin, pwmVal);
+  // if y-axis value passes threshold, write pulse width to signal pin
+  if(yValue > 800 || yValue < 224) analogWrite(signalPin, pwmVal);
+  // else, set thruster to neutral
+  else analogWrite(signalPin, 191);
 
   //Serial.print(xValue);
   //Serial.print("\t");
