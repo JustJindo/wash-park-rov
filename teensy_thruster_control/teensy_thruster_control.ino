@@ -2,34 +2,32 @@
 // include Teensy servo library
 #include <PWMServo.h>
 
-/*
-Variables governing motor control are labeled according to the order described below:
-Motor 1: Starboard Side Vertical
-Motor 2: Port Side Vertical
-Motor 3: Starboard Side Horizontal
-Motor 4: Port Side Horizontal
-*/
+// A14 = 38, A15 = 39, A16 = 40, A17 = 41
+#define leftXPin 40
+#define leftYPin 41
+#define leftButtonPin 36
+#define rightXPin 38
+#define rightYPin 39
+#define rightButtonPin 37
 
-#define left_xPin A14 // 38
-#define left_yPin A15 // 39
-#define right_xPin A16 // 40
-#define right_yPin A17 // 41
-#define M1_signalPin 33
-#define M2_signalPin 34
-#define M3_signalPin 35
-#define M4_signalPin 36
+/*M1 = Port Side Horizontal
+  M2 = Port Side Vertical
+  M3 = Starboard Side Horizontal
+  M4 = Starboard Side Vertical*/
+#define M1_signalPin 2
+#define M2_signalPin 3
+#define M3_signalPin 4
+#define M4_signalPin 5
 
-/*
-APISQUEEN 12-24V 45A Bi-directional ESC
->500Hz Refresh
-1-2ms PWM Signal
-1.5-2ms Forward
-1-1.5ms Backward
-1.5ms Zero Throttle
-*/
+/*APISQUEEN 12-24V 45A Bi-directional ESC
+  >500Hz Refresh
+  1-2ms PWM Signal
+  1.5-2ms Forward
+  1-1.5ms Backward
+  1.5ms Zero Throttle*/
 
 void setup() {
-  // set PWM frequencies to 500 Hz
+  // set PWM frequency to 500 Hz
   analogWriteFrequency(M1_signalPin, 500);
   analogWriteFrequency(M2_signalPin, 500);
   analogWriteFrequency(M3_signalPin, 500);
@@ -38,7 +36,7 @@ void setup() {
   analogWriteResolution(8);
   // begin serial communication at 9600 bits/sec
   Serial.begin(9600);
-  // 3 second delays written into calibrations for stability
+  // 3 second delay written into calibration for stability
   calibrate_esc(M1_signalPin);
   calibrate_esc(M2_signalPin);
   calibrate_esc(M3_signalPin);
@@ -57,25 +55,55 @@ W = C / 256*500
 
 void loop() {
   // read joystick values from pins
-  int left_xValue = analogRead(left_xPin);
-  int left_yValue = analogRead(left_yPin);
-  int right_xValue = analogRead(right_xPin);
-  int right_yValue = analogRead(right_yPin);
-  // map the potentiometer axes' values ranging from 0-1023 to a valid pulse width range from 128-255
-  int left_xPWM = map(left_xValue, 0, 1023, 128, 255);
-  int left_yPWM = map(left_yValue, 0, 1023, 128, 255);
-  int right_xPWM = map(right_xValue, 0, 1023, 128, 255);
-  int right_yPWM = map(right_yValue, 0, 1023, 128, 255);
+  int leftXValue = analogRead(leftXPin);
+  int leftYValue = analogRead(leftYPin);
+  int leftButtonValue = digitalRead(leftButtonPin);
+  int rightXValue = analogRead(rightXPin);
+  int rightYValue = analogRead(rightYPin);
+  int rightButtonValue = digitalRead(rightButtonPin);
 
-  // print returned joystick values
-  Serial.printf("Left X: %i", left_xPWM);
+  // map potentiometer axes ranging from 0-1023 to a valid pulse width range from 128-255
+  int leftXPWM = map(leftXValue, 0, 1023, 128, 255);
+  int leftYPWM = map(leftYValue, 0, 1023, 128, 255);
+  int rightXPWM = map(rightXValue, 0, 1023, 128, 255);
+  int rightYPWM = map(rightYValue, 0, 1023, 128, 255);
+
+  // if axis value passes threshold, write pulse width to respective signal pin(s)
+  if(leftYValue > 800 || leftYValue < 224) {
+    analogWrite(M1_signalPin, leftYPWM);
+    analogWrite(M3_signalPin, leftYPWM - 2*(leftYPWM - 191));
+  } // end if
+  // else, set thruster(s) to neutral
+  else {
+    analogWrite(M1_signalPin, 191);
+    analogWrite(M3_signalPin, 191);
+  } // end else
+
+  // left and right joystick controls are processed independently
+  if(rightYValue > 800 || rightYValue < 224) {
+    analogWrite(M2_signalPin, rightYPWM);
+    analogWrite(M4_signalPin, rightYPWM - 2*(rightYPWM - 191));
+  } // end if
+  else{
+    analogWrite(M2_signalPin, 191);
+    analogWrite(M4_signalPin, 191);
+  } // end else
+
+  Serial.print(leftXValue);
   Serial.print("\t");
-  Serial.printf("Left Y: %i", left_yPWM);
+  Serial.print(leftYValue);
   Serial.print("\t");
-  Serial.printf("Right X: %i", right_xPWM);
+  Serial.print(leftButtonValue);
   Serial.print("\t");
-  Serial.printf("Right Y: %i", right_yPWM);
+  Serial.print(rightXValue);
+  Serial.print("\t");
+  Serial.print(rightYValue);
+  Serial.print("\t");
+  Serial.print(rightButtonValue);
   Serial.println("");
+
+  // 10 ms delay for stability
+  delay(10);
 } // end loop
 
 // calibrate ESC by sending 1.5ms signal for zero throttle at power on, then forward throttle, then backward.
@@ -102,4 +130,4 @@ void calibrate_esc(int signalPin) {
 
   Serial.println("Calibration complete.");
   delay(3000);
-} // end calibrate_esc
+} //end calibrate_esc
