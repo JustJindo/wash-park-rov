@@ -10,10 +10,17 @@
 #define rightYPin 39
 #define rightButtonPin 37
 
-/*M1 = Port Side Horizontal
+/*POTENTIOMETER AXES ORIENTATIONS IN CONTROLLER
+  LEFT: Y->1024
+  RIGHT: Y->0
+  UP: X->0
+  DOWN: X->1024
+  
+  M1 = Port Side Horizontal
   M2 = Port Side Vertical
   M3 = Starboard Side Horizontal
   M4 = Starboard Side Vertical*/
+  
 #define M1_signalPin 2
 #define M2_signalPin 3
 #define M3_signalPin 4
@@ -68,22 +75,30 @@ void loop() {
   int rightXPWM = map(rightXValue, 0, 1023, 128, 255);
   int rightYPWM = map(rightYValue, 0, 1023, 128, 255);
 
-  // if axis value passes threshold, write pulse width to respective signal pin(s)
-  if(leftYValue > 800 || leftYValue < 224) {
-    analogWrite(M1_signalPin, leftYPWM);
-    analogWrite(M3_signalPin, leftYPWM - 2*(leftYPWM - 191));
+   // LEFT JOYSTICK FORWARD/BACKWARD
+  // if axis value passes deadzone, write pulse width to respective signal pin(s)
+  if(leftXValue > 524 || leftXValue < 500) {
+    analogWrite(M1_signalPin, leftXPWM);
+    analogWrite(M3_signalPin, leftXPWM - 2*(leftXPWM - 191));
   } // end if
+  // NEUTRAL
   // else, set thruster(s) to neutral
   else {
     analogWrite(M1_signalPin, 191);
     analogWrite(M3_signalPin, 191);
   } // end else
-
-  // left and right joystick controls are processed independently
-  if(rightYValue > 800 || rightYValue < 224) {
-    analogWrite(M2_signalPin, rightYPWM);
-    analogWrite(M4_signalPin, rightYPWM - 2*(rightYPWM - 191));
+  
+  // RIGHT JOYSTICK FORWARD/BACKWARD
+  if(rightXValue > 524 || rightXValue < 500) {
+    analogWrite(M2_signalPin, rightXPWM);
+    analogWrite(M4_signalPin, rightXPWM - 2*(rightXPWM - 191));
   } // end if
+  // RIGHT JOYSTICK LEFT/RIGHT
+  else if(rightYValue > 524 || rightYValue < 500) {
+    analogWrite(M1_signalPin, rightYPWM);
+    analogWrite(M3_signalPin, rightYPWM);
+  } // end else if
+  // NEUTRAL
   else{
     analogWrite(M2_signalPin, 191);
     analogWrite(M4_signalPin, 191);
