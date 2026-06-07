@@ -3,3 +3,4 @@ If you share an interest in making ROVs, I hope this repository's contents can b
 
 ![Here's how my ROV looks as of March 27.](https://github.com/JustJindo/wash-park-rov/blob/master/wip_0527.png?raw=true)
 ![Here's an update on the ROV as of June 4.](https://github.com/JustJindo/wash-park-rov/blob/master/wip_0604.png?raw=true)
+![ROV propulsion system is nearly finished as of June 6.](https://github.com/JustJindo/wash-park-rov/blob/master/wip_0606.png?raw=true)
