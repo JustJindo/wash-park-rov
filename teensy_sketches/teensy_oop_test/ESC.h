@@ -14,17 +14,16 @@
 
 class ESC
 {
-    public:
-    // you should know...
-    // which motor the ESC is connected to
-    // what the ESC's current throttle magnitude is
-    // whether or not the ESC is on
-    int position;
+    public: // access specifier - determines whether members can be accessed/modified outside the code
+            // members are private unless specified otherwise
+
+    int position; // motor position (i.e. Port Horizontal)
+    ESC(const int signalPin); // declare constructor
 
     void throttle(int PWM); // send a PWM throttle signal to the ESC
     void getTelemetry(); // printout telemetry from ESC
     void calibrate(); // calibrate ESCs
 
-    private:
+    private: // private - members cannot be accessed/modified outside of class declaration/definition
 
 };
