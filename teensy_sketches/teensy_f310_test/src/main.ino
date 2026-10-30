@@ -12,7 +12,6 @@ JoystickController joysticks[COUNT_JOYSTICKS] = {
   JoystickController(myusb)
 };
 
-// NO IDEA WHAT THESE ARE FOR, DO NOT DELETE UNLESS UNDERSTOOD
 int user_axis[64];
 int psAxis[64];
 

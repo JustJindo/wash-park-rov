@@ -1,8 +1,9 @@
-// This header file declares a Gamepad class to translate HID inputs from a Logitech F310 gamepad to ROV command signals.
+// This header file declares a Gamepad class to handle USB connection and signals from a Logitech F310 gamepad.
 #include <Arduino.h>
 #include <stdio.h>
 
-#define USB_associated_pins_and_such
+// Most of the code is cannibalized from the 'USBHost_t36' library's 'Joystick' example.
+#include "USBHost_t36.h"
 
 // Gamepad will handle Logitech F310 gamepad inputs
 class Gamepad
