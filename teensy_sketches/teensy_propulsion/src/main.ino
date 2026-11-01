@@ -39,8 +39,6 @@ USBHIDInput *hiddrivers[] = {&joysticks[0]};
 const char * hid_driver_names[CNT_DEVICES] = {"joystick[0H]"};
 bool hid_driver_active[CNT_DEVICES] = {false};
 
-bool show_changed_only = false; // boolean to limit displayed fields from 'JoystickController' objects based on changed values
-
 uint8_t joystick_left_trigger_value[COUNT_JOYSTICKS] = {0};
 uint8_t joystick_right_trigger_value[COUNT_JOYSTICKS] = {0};
 uint64_t joystick_full_notify_mask = (uint64_t) - 1;
@@ -63,16 +61,16 @@ void setup()
   // set pulse width resolution to 8 bits
   analogWriteResolution(8);
 
-  Serial1.begin(2000000);
+  Serial1.begin(9600);
   while (!Serial) ; // wait for Arduino Serial Monitor
 
-  // // Calibrate ESCs with 3 second intervals for stability
-  // CalibrateESC(M1_signalPin);
-  // CalibrateESC(M2_signalPin);
-  // CalibrateESC(M3_signalPin);
-  // CalibrateESC(M4_signalPin);
+  // Calibrate ESCs with 3 second intervals for stability
+  CalibrateESC(M1_signalPin);
+  CalibrateESC(M2_signalPin);
+  CalibrateESC(M3_signalPin);
+  CalibrateESC(M4_signalPin);
 
-  Serial.println("\n\nUSB Host Joystick Testing");
+  Serial.println("\n\nBegin propulsion control...");
   myusb.begin();
 } // end setup
 
@@ -90,14 +88,6 @@ void loop()
     } else if ((ch == 'f') || (ch == 'F')) {
       Serial.println("Only notify on Full Axis changes");
       joysticks[0].axisChangeNotifyMask(joystick_full_notify_mask);
-    } else {
-      if (show_changed_only) {
-        show_changed_only = false;
-        Serial.println("\n*** Show All fields mode ***");
-      } else {
-        show_changed_only = true;
-        Serial.println("\n*** Show only changed fields mode ***");
-      }
     }
   }
 
@@ -109,34 +99,73 @@ void loop()
     
     //Serial.printf(" AMasks: %x %x:%x", axis_mask, (uint32_t)(user_axis_mask >> 32), (uint32_t)(user_axis_mask & 0xffffffff));
     //Serial.printf(" M: %lx %lx", axis_mask, joysticks[0].axisChangedMask());
-    
-    if (show_changed_only) {
-      for (uint8_t i = 0; axis_changed_mask != 0; i++, axis_changed_mask >>= 1) {
-        if (axis_changed_mask & 1) {
-          Serial.printf(" %d:%d", i, joysticks[0].getAxis(i));
-        }
-      }
-    } else {
-      for (uint8_t i = 0; axis_mask != 0; i++, axis_mask >>= 1) {
-        if (axis_mask & 1) {
-          Serial.printf(" %d:%d", i, joysticks[0].getAxis(i));
-          Serial.printf(" %d:%d", i, joysticks[0].getAxis(0)); // Testing output of first value in getAxis();
-        }
-      }
-    }
+
+    // for (uint8_t i = 0; axis_mask != 0; i++, axis_mask >>= 1) {
+    //   if (axis_mask & 1) {
+    //     Serial.printf(" %d:%d", i, joysticks[0].getAxis(i));
+    //   }
+    // }
 
     // get each axis value from the controller and write to the 'psAxis' index
     for (uint8_t i = 0; i<64; i++) {
         psAxis[i] = joysticks[0].getAxis(i);
     }
 
+    //===========================================================================
+    // Record, map, and write axes' values to ESC signal pins
+    //===========================================================================
+
+    /*Left X-Axis: joysticks[0].getAxis(0)
+      Left Y-Axis: joysticks[0].getAxis(1)
+      Right X-Axis: joysticks[0].getAxis(2)
+      Right Y-Axis: joysticks[0].getAxis(5)*/
+      
+    // record immediate joystick values
+    int leftXValue = joysticks[0].getAxis(0);
+    int leftYValue = joysticks[0].getAxis(1);
+    int rightXValue = joysticks[0].getAxis(2);
+    int rightYValue = joysticks[0].getAxis(5);
+
+    // map joystick axes ranging from 0-255 to a valid ESC pulse width range from 128-255
+    int leftXPWM = map(leftXValue, 0, 255, 128, 255);
+    int leftYPWM = map(leftYValue, 0, 255, 128, 255);
+    int rightXPWM = map(rightXValue, 0, 255, 128, 255);
+    int rightYPWM = map(rightYValue, 0, 255, 128, 255);
+
+    // if axis value passes deadzone, write control signal to associated ESC
+    if(leftXValue > 135 || leftXValue < 119) { // LEFT JOYSTICK FORWARD/BACKWARD
+      analogWrite(M1_signalPin, leftXPWM);
+      analogWrite(M3_signalPin, leftXPWM - 2*(leftXPWM - 191));
+    } else { // NEUTRAL
+      analogWrite(M1_signalPin, 191);
+      analogWrite(M3_signalPin, 191);
+    }
+    
+    if(rightXValue > 135 || rightXValue < 119) { // RIGHT JOYSTICK FORWARD/BACKWARD
+      analogWrite(M2_signalPin, rightXPWM);
+      analogWrite(M4_signalPin, rightXPWM - 2*(rightXPWM - 191));
+    } else if(rightYValue > 135 || rightYValue < 119) { // RIGHT JOYSTICK LEFT/RIGHT
+      analogWrite(M1_signalPin, rightYPWM);
+      analogWrite(M3_signalPin, rightYPWM);
+    } else{ // NEUTRAL
+      analogWrite(M2_signalPin, 191);
+      analogWrite(M4_signalPin, 191);
+    }
+
+    // print control signals calculated for each axis value
+    Serial.printf(" LX:%d", leftXPWM);
+    Serial.printf(" LY:%d", leftYPWM);
+    Serial.printf(" RX:%d", rightXPWM);
+    Serial.printf(" RY:%d", rightYPWM);
+
     Serial.println();
     joysticks[0].joystickDataClear();
   }
+
 } // end loop
 
 //=============================================================================
-// Calibrate ESC by sending zero, forward, then backward throttle
+// Calibrate ESC by sending neutral, forward, then backward throttle signals
 //=============================================================================
 void CalibrateESC(int signalPin) {
   Serial.println("Calibrating ESCs...");
