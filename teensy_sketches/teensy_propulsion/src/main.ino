@@ -62,7 +62,7 @@ void setup()
   analogWriteResolution(8);
 
   Serial1.begin(9600);
-  while (!Serial) ; // wait for Arduino Serial Monitor
+  //while (!Serial) ; // wait for Arduino Serial Monitor
 
   // Calibrate ESCs with 3 second intervals for stability
   CalibrateESC(M1_signalPin);
@@ -133,20 +133,20 @@ void loop()
     int rightYPWM = map(rightYValue, 0, 255, 128, 255);
 
     // if axis value passes deadzone, write control signal to associated ESC
-    if(leftXValue > 135 || leftXValue < 119) { // LEFT JOYSTICK FORWARD/BACKWARD
-      analogWrite(M1_signalPin, leftXPWM);
-      analogWrite(M3_signalPin, leftXPWM - 2*(leftXPWM - 191));
+    if(leftYValue > 135 || leftYValue < 119) { // LEFT JOYSTICK FORWARD/BACKWARD
+      analogWrite(M1_signalPin, leftYPWM);
+      analogWrite(M3_signalPin, leftYPWM - 2*(leftYPWM - 191));
     } else { // NEUTRAL
       analogWrite(M1_signalPin, 191);
       analogWrite(M3_signalPin, 191);
     }
     
-    if(rightXValue > 135 || rightXValue < 119) { // RIGHT JOYSTICK FORWARD/BACKWARD
-      analogWrite(M2_signalPin, rightXPWM);
-      analogWrite(M4_signalPin, rightXPWM - 2*(rightXPWM - 191));
-    } else if(rightYValue > 135 || rightYValue < 119) { // RIGHT JOYSTICK LEFT/RIGHT
-      analogWrite(M1_signalPin, rightYPWM);
-      analogWrite(M3_signalPin, rightYPWM);
+    if(rightYValue > 135 || rightYValue < 119) { // RIGHT JOYSTICK FORWARD/BACKWARD
+      analogWrite(M2_signalPin, rightYPWM);
+      analogWrite(M4_signalPin, rightYPWM - 2*(rightYPWM - 191));
+    } else if(rightXValue > 135 || rightXValue < 119) { // RIGHT JOYSTICK LEFT/RIGHT
+      analogWrite(M1_signalPin, rightXPWM);
+      analogWrite(M3_signalPin, rightXPWM);
     } else{ // NEUTRAL
       analogWrite(M2_signalPin, 191);
       analogWrite(M4_signalPin, 191);
@@ -162,6 +162,8 @@ void loop()
     joysticks[0].joystickDataClear();
   }
 
+  // 10 ms delay for stability
+  delay(10);
 } // end loop
 
 //=============================================================================
